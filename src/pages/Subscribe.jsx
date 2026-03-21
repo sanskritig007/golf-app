@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../utils/supabase';
 
 const Subscribe = () => {
   const [loading, setLoading] = useState(false);
   const [billing, setBilling] = useState('monthly');
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
+    if (!user) {
+      alert("Please log in to seamlessly subscribe.");
+      navigate('/login');
+      return;
+    }
+
     setLoading(true);
-    // Mock Stripe flow
+    
+    // Execute mock Stripe checkout by directly upgrading the user in the database
+    const { error } = await supabase
+      .from('profiles')
+      .update({ subscription_status: 'active' })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error("Error upgrading subscription:", error);
+      alert("Checkout simulation failed. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    // Simulate network processing delay for UX
     setTimeout(() => {
       setLoading(false);
-      alert("Redirecting to Mock Stripe Checkout... (Integration complete for testing phase)");
+      alert("Payment Successful! Welcome to the Club.");
+      navigate('/dashboard');
     }, 1500);
   };
 
