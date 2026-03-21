@@ -62,7 +62,7 @@ const Navbar = () => {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="sticky top-0 z-[100] py-4 mb-8 bg-black/80 backdrop-blur-lg border-b border-white/5 transition-all">
+    <nav className="sticky top-0 z-[100] py-4 mb-8 bg-white/5 backdrop-blur-xl border-b border-white/10 transition-all">
       <div className="container flex items-center justify-between">
         <Link to="/" onClick={closeMobileMenu} className="flex items-center gap-2 text-2xl font-extrabold font-heading text-primary no-underline hover:opacity-80 transition-opacity z-50">
           <span className="text-white">GOLF</span>CHARITY
