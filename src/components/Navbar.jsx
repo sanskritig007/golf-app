@@ -62,7 +62,7 @@ const Navbar = () => {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="glass sticky top-0 z-50 py-4 mb-8">
+    <nav className="sticky top-0 z-[100] py-4 mb-8 bg-black/80 backdrop-blur-lg border-b border-white/5 transition-all">
       <div className="container flex items-center justify-between">
         <Link to="/" onClick={closeMobileMenu} className="flex items-center gap-2 text-2xl font-extrabold font-heading text-primary no-underline hover:opacity-80 transition-opacity z-50">
           <span className="text-white">GOLF</span>CHARITY
@@ -116,7 +116,7 @@ const Navbar = () => {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="absolute top-full left-0 w-full bg-[#0a0a0b] border-b border-white/10 shadow-2xl md:hidden animate-fade-in flex flex-col items-center py-6 gap-6 z-40">
+          <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col gap-4 shadow-2xl z-40 animate-fade-in">
             <NavLink to="/" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Home</NavLink>
             <NavLink to="/charities" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Charities</NavLink>
             
