@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../utils/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -81,13 +95,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container py-12 animate-fade-in">
-      <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
+    <motion.div 
+      className="container py-12"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row gap-8 items-start mb-12">
         <div>
           <h2>Welcome Back, <span className="text-primary">{user?.user_metadata?.fullName || 'Golfer'}</span></h2>
           <p className="text-text-muted">Manage your performance and track your charitable impact.</p>
         </div>
-        <div className="md:ml-auto glass px-6 py-4 rounded-2xl border-primary/20 flex flex-col items-end">
+        <div className="md:ml-auto glass px-6 py-4 rounded-2xl border-primary/20 flex flex-col items-end hover:shadow-glow transition-all duration-300">
           <div className="text-sm text-text-muted">Subscription Status</div>
           <div className="text-primary font-bold flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -98,13 +117,13 @@ const Dashboard = () => {
           </div>
           <div className="text-xs text-text-muted mt-1">Renews 2027-03-20</div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid md:grid-cols-3 gap-8">
         
         {/* Score Entry & History (2 Cols) */}
         <div className="md:col-span-2 space-y-8">
-          <div className="glass-card">
+          <motion.div variants={itemVariants} className="glass-card">
             <h3 className="mb-4">Submit a Round</h3>
             <form onSubmit={handleAddScore} className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
@@ -113,7 +132,7 @@ const Dashboard = () => {
                   type="date" 
                   required
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:shadow-glow transition-all duration-300"
                   value={newDate}
                   onChange={(e) => setNewDate(e.target.value)}
                 />
@@ -125,19 +144,25 @@ const Dashboard = () => {
                   min="1"
                   max="45"
                   required
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:shadow-glow transition-all duration-300"
                   value={newScore}
                   onChange={(e) => setNewScore(e.target.value)}
                   placeholder="e.g. 36"
                 />
               </div>
-              <button type="submit" disabled={isSubmitting} className="btn-primary w-full sm:w-auto h-[50px]">
+              <motion.button 
+                whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(16, 185, 129, 0.4)" }}
+                whileTap={{ scale: 0.98 }}
+                type="submit" 
+                disabled={isSubmitting} 
+                className="btn-primary w-full sm:w-auto h-[50px] border-none outline-none"
+              >
                 {isSubmitting ? 'Submitting...' : 'Submit'}
-              </button>
+              </motion.button>
             </form>
-          </div>
+          </motion.div>
 
-          <div className="glass-card">
+          <motion.div variants={itemVariants} className="glass-card">
             <div className="flex justify-between items-center mb-6">
               <h3 className="m-0">Your Active Scores</h3>
               <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">LAST 5 ROUNDS</span>
@@ -153,33 +178,46 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {scores.map((score, idx) => (
-                  <div key={score.id} className="flex justify-between items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="text-xl font-mono font-bold text-white w-8">{score.value}</div>
-                      <div className="text-sm text-text-muted">pts</div>
-                    </div>
-                    <div className="text-sm text-text-muted">{new Date(score.date).toLocaleDateString()}</div>
-                    {idx === 0 && <div className="text-xs text-primary font-bold">LATEST</div>}
-                  </div>
-                ))}
+                <AnimatePresence initial={false}>
+                  {scores.map((score, idx) => (
+                    <motion.div 
+                      key={score.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                      className="flex justify-between items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:border-primary/50 hover:shadow-glow transition-all duration-300"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-xl font-mono font-bold text-white w-8">{score.value}</div>
+                        <div className="text-sm text-text-muted">pts</div>
+                      </div>
+                      <div className="text-sm text-text-muted">{new Date(score.date).toLocaleDateString()}</div>
+                      {idx === 0 && <div className="text-xs text-primary font-bold animate-pulse">LATEST</div>}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* Sidebar Info (1 Col) */}
         <div className="space-y-8">
-          <div className="glass-card flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+          <motion.div variants={itemVariants} className="glass-card flex flex-col items-center text-center hover:shadow-glow transition-all duration-500">
+            <motion.div 
+              animate={{ y: [-5, 5, -5] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 shadow-glow"
+            >
               <span className="text-2xl">🌱</span>
-            </div>
+            </motion.div>
             <h3 className="mb-2">Your Impact</h3>
             <p className="text-sm mb-4">You are directing <strong className="text-white">10%</strong> of your subscription to the <strong>Global Health Foundation</strong>.</p>
             <button className="text-primary text-sm font-semibold hover:underline">Change Charity</button>
-          </div>
+          </motion.div>
 
-          <div className="glass-card">
+          <motion.div variants={itemVariants} className="glass-card hover:shadow-glow transition-all duration-500">
             <h3 className="mb-4">Participation Summary</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex justify-between">
@@ -195,10 +233,10 @@ const Dashboard = () => {
                 <span className="text-white font-bold">April 1st</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* Winnings & Proof Upload */}
-          <div className="glass-card border-primary/30">
+          <motion.div variants={itemVariants} className="glass-card border-primary/30 shadow-glow-lg animate-float">
             <h3 className="mb-2 flex items-center gap-2">
               Claim Winnings
               <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
@@ -210,17 +248,22 @@ const Dashboard = () => {
               <div className="text-2xl font-bold text-primary">£50.00</div>
             </div>
 
-            <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={() => alert("File upload dialog would open here. Proof of scorecard is sent to admins for manual review before Stripe payout.")}>
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="btn-primary w-full flex items-center justify-center gap-2" 
+              onClick={() => alert("File upload dialog would open here. Proof of scorecard is sent to admins for manual review before Stripe payout.")}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Upload Scorecard Proof
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </div>
         
       </div>
-    </div>
+    </motion.div>
   );
 };
 
