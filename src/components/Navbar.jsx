@@ -45,6 +45,7 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           <NavLink to="/" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Home</NavLink>
+          <NavLink to="/charities" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Charities</NavLink>
           
           {user ? (
             <>
@@ -94,6 +95,7 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="absolute top-full left-0 w-full bg-[#0a0a0b] border-b border-white/10 shadow-2xl md:hidden animate-fade-in flex flex-col items-center py-6 gap-6 z-40">
             <NavLink to="/" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Home</NavLink>
+            <NavLink to="/charities" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Charities</NavLink>
             
             {user ? (
               <>

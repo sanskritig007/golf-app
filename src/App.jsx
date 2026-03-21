@@ -9,6 +9,8 @@ import Subscribe from './pages/Subscribe';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Admin from './pages/Admin';
+import CharityDirectory from './pages/CharityDirectory';
+import CharityProfile from './pages/CharityProfile';
 
 function App() {
   return (
@@ -17,8 +19,10 @@ function App() {
         <Navbar />
         <main className="flex-grow">
           <Routes>
-            {/* Public route */}
+            {/* Public routes */}
             <Route path="/" element={<Landing />} />
+            <Route path="/charities" element={<CharityDirectory />} />
+            <Route path="/charities/:id" element={<CharityProfile />} />
             
             {/* Guest-only routes (redirects to dashboard if logged in) */}
             <Route element={<ProtectedRoute isProtected={false} />}>

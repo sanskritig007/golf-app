@@ -271,6 +271,18 @@ const Dashboard = () => {
     setIsSubmitting(false);
   };
 
+  const handleDeleteScore = async (scoreId) => {
+    if (!window.confirm("Are you sure you want to delete this score?")) return;
+    
+    const { error } = await supabase.from('scores').delete().eq('id', scoreId);
+    if (!error) {
+      setScores(prev => prev.filter(s => s.id !== scoreId));
+      setDrawsEntered(prev => Math.max(0, prev - 1));
+    } else {
+      alert("Failed to delete score.");
+    }
+  };
+
   return (
     <motion.div 
       className="container py-12"
@@ -294,7 +306,9 @@ const Dashboard = () => {
                 </span>
                 Active • Member
               </div>
-              <div className="text-xs text-text-muted mt-1">Thank you for your support!</div>
+              <div className="text-xs text-text-muted mt-1 whitespace-nowrap">
+                Next Renewal: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
             </>
           ) : (
             <>
@@ -402,8 +416,17 @@ const Dashboard = () => {
                         <div className="text-xl font-mono font-bold text-white w-8">{score.value}</div>
                         <div className="text-sm text-text-muted">pts</div>
                       </div>
-                      <div className="text-sm text-text-muted">{new Date(score.date).toLocaleDateString()}</div>
-                      {idx === 0 && <div className="text-xs text-primary font-bold animate-pulse">LATEST</div>}
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-text-muted">{new Date(score.date).toLocaleDateString()}</div>
+                        {idx === 0 && <div className="text-xs text-primary font-bold animate-pulse hidden sm:block">LATEST</div>}
+                        <button 
+                          onClick={() => handleDeleteScore(score.id)}
+                          className="text-text-muted hover:text-red-400 p-1 opacity-50 hover:opacity-100 transition-opacity"
+                          title="Delete Score"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                        </button>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
