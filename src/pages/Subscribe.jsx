@@ -17,16 +17,14 @@ const Subscribe = () => {
     }
 
     setLoading(true);
-    
-    // Execute mock Stripe checkout by directly upgrading the user in the database
-    const { error } = await supabase
-      .from('profiles')
-      .update({ subscription_status: 'active' })
-      .eq('id', user.id);
 
-    if (error) {
-      console.error("Error upgrading subscription:", error);
-      alert("Checkout simulation failed. Please try again.");
+    // Use the SECURITY DEFINER RPC — it bypasses RLS entirely, avoiding
+    // the infinite recursion caused by the self-referential profiles policy.
+    const { error: rpcError } = await supabase.rpc('activate_subscription');
+
+    if (rpcError) {
+      console.error("activate_subscription RPC failed:", rpcError.message);
+      alert(`Checkout simulation failed: ${rpcError.message}`);
       setLoading(false);
       return;
     }
@@ -35,7 +33,9 @@ const Subscribe = () => {
     setTimeout(() => {
       setLoading(false);
       alert("Payment Successful! Welcome to the Club.");
-      navigate('/dashboard');
+      // Hard redirect — guarantees Dashboard fetches a completely fresh profile
+      // from the DB (no stale React state from the previous page).
+      window.location.href = '/dashboard';
     }, 1500);
   };
 

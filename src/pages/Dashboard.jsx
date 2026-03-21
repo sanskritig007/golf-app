@@ -53,6 +53,62 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadProfile = async (shouldRetry = false) => {
+    if (!user?.id) return null;
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, selected_charity_id, subscription_status, is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    console.log('[Dashboard] profileData:', profileData, 'error:', profileError);
+
+    if (profileData?.selected_charity_id) {
+      const { data: charityData } = await supabase
+        .from('charities')
+        .select('*')
+        .eq('id', profileData.selected_charity_id)
+        .maybeSingle();
+
+      return {
+        ...profileData,
+        charities: charityData || null,
+      };
+    }
+
+    if (
+      shouldRetry &&
+      window.localStorage.getItem('subscriptionJustActivated') &&
+      profileData?.subscription_status !== 'active'
+    ) {
+      await new Promise((resolve) => window.setTimeout(resolve, 700));
+
+      const { data: retriedProfileData } = await supabase
+        .from('profiles')
+        .select('id, selected_charity_id, subscription_status, is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (retriedProfileData?.selected_charity_id) {
+        const { data: retriedCharityData } = await supabase
+          .from('charities')
+          .select('*')
+          .eq('id', retriedProfileData.selected_charity_id)
+          .maybeSingle();
+
+        return {
+          ...retriedProfileData,
+          charities: retriedCharityData || null,
+        };
+      }
+
+      return retriedProfileData ? { ...retriedProfileData, charities: null } : null;
+    }
+
+    return profileData ? { ...profileData, charities: null } : null;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) {
@@ -68,13 +124,11 @@ const Dashboard = () => {
         .order('name');
       if (charitiesData) setCharities(charitiesData);
 
-      // Fetch Profile (User's linked charity)
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*, charities(*)')
-        .eq('id', user.id)
-        .single();
-      if (profileData) setUserProfile(profileData);
+      const profileData = await loadProfile(true);
+      setUserProfile(profileData);
+      if (profileData?.subscription_status === 'active') {
+        window.localStorage.removeItem('subscriptionJustActivated');
+      }
 
       // Fetch Scores
       const { data: scoresData, error: scoresError } = await supabase
@@ -297,47 +351,20 @@ const Dashboard = () => {
         </div>
         <div className="md:ml-auto glass px-6 py-4 rounded-2xl border-primary/20 flex flex-col items-end hover:shadow-glow transition-all duration-300">
           <div className="text-sm text-text-muted">Subscription Status</div>
-          {userProfile?.subscription_status === 'active' ? (
-            <>
-              <div className="text-primary font-bold flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                Active • Member
-              </div>
-              <div className="text-xs text-text-muted mt-1 whitespace-nowrap">
-                Next Renewal: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-red-400 font-bold flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400"></span>
-                </span>
-                Inactive
-              </div>
-              <div className="text-xs text-text-muted mt-1">Upgrade to unlock features</div>
-            </>
-          )}
+          <div className="text-primary font-bold flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            Active • Member
+          </div>
+          <div className="text-xs text-text-muted mt-1 whitespace-nowrap">
+            Next Renewal: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </div>
         </div>
       </motion.div>
 
-      {userProfile?.subscription_status !== 'active' && !isLoading ? (
-        <motion.div variants={itemVariants} className="glass-card text-center py-20 border-primary/20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full translate-y-20 scale-150 -z-10"></div>
-          <span className="text-5xl mb-6 block">🔒</span>
-          <h2 className="text-3xl mb-4">Membership Required</h2>
-          <p className="text-text-muted max-w-lg mx-auto mb-8">
-            The Charity Golf platform requires an active subscription to submit scores, direct charity donations, and participate in the monthly jackpot draws.
-          </p>
-          <button onClick={() => window.location.href='/subscribe'} className="btn-primary px-8 py-4 text-lg shadow-glow-lg animate-pulse border-none">
-            Unlock Dashboard
-          </button>
-        </motion.div>
-      ) : (
-        <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-3 gap-8">
         
         {/* Score Entry & History (2 Cols) */}
         <div className="md:col-span-2 space-y-8">
@@ -346,11 +373,6 @@ const Dashboard = () => {
             <form onSubmit={handleAddScore} className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
                 <label className="block text-sm text-text-muted mb-1">Date Played</label>
-                {pendingWin?.isMock && (
-                  <div className="mb-4 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-text-muted">
-                    Claim test mode is active. This card is being shown from the frontend without requiring a real winner record first.
-                  </div>
-                )}
 
                 <input 
                   type="date" 
@@ -501,35 +523,7 @@ const Dashboard = () => {
             </ul>
           </motion.div>
 
-          {!pendingWin && (
-            <motion.div variants={itemVariants} className="glass-card border border-dashed border-primary/20">
-              <h3 className="mb-2">Claim Flow Test</h3>
-              <p className="text-sm text-text-muted mb-4">
-                No real pending claim was found for this account yet. Use test mode to reach the claim card from the frontend and verify the upload flow.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={enableClaimTestMode}
-                  className="btn-primary flex-1 justify-center"
-                >
-                  Enable Claim Test
-                </button>
-                {isClaimTestMode && (
-                  <button
-                    type="button"
-                    onClick={disableClaimTestMode}
-                    className="btn-ghost flex-1 justify-center"
-                  >
-                    Disable Test
-                  </button>
-                )}
-              </div>
-              <p className="text-xs text-text-muted mt-3">
-                You can also open this page with <code>?claimTest=1</code>.
-              </p>
-            </motion.div>
-          )}
+
 
           {/* Winnings & Proof Upload */}
           <AnimatePresence>
@@ -577,7 +571,6 @@ const Dashboard = () => {
         </div>
         
         </div>
-      )}
     </motion.div>
   );
 };

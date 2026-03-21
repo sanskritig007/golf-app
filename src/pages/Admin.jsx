@@ -7,8 +7,6 @@ import { supabase } from '../utils/supabase';
 const Admin = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   const [activeTab, setActiveTab] = useState('draws');
   
@@ -34,27 +32,6 @@ const Admin = () => {
   const [isRunningOfficial, setIsRunningOfficial] = useState(false);
   const [officialDrawType, setOfficialDrawType] = useState('random');
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      const { data } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-      
-      if (data?.is_admin) {
-        setIsAdmin(true);
-      } else {
-        navigate('/dashboard');
-      }
-      setIsLoadingAuth(false);
-    };
-    checkAdmin();
-  }, [user, navigate]);
 
   const fetchPayouts = async () => {
     const { data, error } = await supabase
@@ -98,14 +75,12 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) {
-      if (activeTab === 'payouts') fetchPayouts();
-      if (activeTab === 'draws') loadDrawStats();
-      if (activeTab === 'users') fetchUsersList();
-      if (activeTab === 'charities') fetchCharitiesList();
-      if (activeTab === 'analytics') loadAnalytics();
-    }
-  }, [isAdmin, activeTab]);
+    if (activeTab === 'payouts') fetchPayouts();
+    if (activeTab === 'draws') loadDrawStats();
+    if (activeTab === 'users') fetchUsersList();
+    if (activeTab === 'charities') fetchCharitiesList();
+    if (activeTab === 'analytics') loadAnalytics();
+  }, [activeTab]);
 
   // -- Actions --
 
@@ -249,10 +224,6 @@ const Admin = () => {
     setIsRunningOfficial(false);
   };
 
-  if (isLoadingAuth) {
-    return <div className="container py-12 text-center text-text-muted animate-pulse">Verifying Security Clearance...</div>;
-  }
-  if (!isAdmin) return null;
 
   return (
     <div className="container py-12 animate-fade-in min-h-[90vh]">

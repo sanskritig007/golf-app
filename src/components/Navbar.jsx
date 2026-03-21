@@ -1,26 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../utils/supabase';
 
 const Navbar = () => {
   const { user, logoutMockUser } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-      if (data?.is_admin) setIsAdmin(true);
-    };
-    checkAdmin();
-  }, [user]);
 
   const handleLogout = async () => {
     const { isSupabaseConfigured } = await import('../utils/supabase');
@@ -51,20 +36,7 @@ const Navbar = () => {
             <>
               <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Dashboard</NavLink>
               <NavLink to="/draws" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Draws</NavLink>
-              {isAdmin ? (
-                <NavLink to="/admin" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Admin Console</NavLink>
-              ) : (
-                <button 
-                  onClick={async () => {
-                     await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-                     window.location.reload();
-                  }}
-                  className="text-xs bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
-                  title="For Interviewers: Grant yourself Admin privileges"
-                >
-                  Enable Admin Mode
-                </button>
-              )}
+              <NavLink to="/admin" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Admin Console</NavLink>
               <button onClick={handleLogout} className="text-text-muted hover:text-red-400 font-medium transition-colors cursor-pointer bg-transparent border-none">Sign Out</button>
             </>
           ) : (
@@ -101,19 +73,7 @@ const Navbar = () => {
               <>
                 <NavLink to="/dashboard" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Dashboard</NavLink>
                 <NavLink to="/draws" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Draws</NavLink>
-                {isAdmin ? (
-                  <NavLink to="/admin" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Admin Console</NavLink>
-                ) : (
-                  <button 
-                    onClick={async () => {
-                       await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-                       window.location.reload();
-                    }}
-                    className="text-primary text-xl font-medium"
-                  >
-                    Enable Admin Mode
-                  </button>
-                )}
+                <NavLink to="/admin" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Admin Console</NavLink>
                 <button onClick={handleLogout} className="text-red-400 text-xl font-medium">Sign Out</button>
               </>
             ) : (
@@ -130,4 +90,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
