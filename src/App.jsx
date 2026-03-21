@@ -8,6 +8,7 @@ import Draws from './pages/Draws';
 import Subscribe from './pages/Subscribe';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/draws" element={<Draws />} />
               <Route path="/subscribe" element={<Subscribe />} />
-              <Route path="/admin" element={<div className="container"><h2>Admin Panel</h2><p>Restricted access.</p></div>} />
+              <Route path="/admin" element={<Admin />} />
             </Route>
           </Routes>
         </main>

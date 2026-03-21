@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { useAuth } from '../context/AuthContext';
 
 // Mock charities for the assignment scope
 const CHARITIES = [
@@ -11,6 +12,7 @@ const CHARITIES = [
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { loginMockUser } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -31,6 +33,15 @@ const Signup = () => {
     setError(null);
 
     // 1. Create Auth User
+    const { isSupabaseConfigured } = await import('../utils/supabase');
+    
+    if (!isSupabaseConfigured) {
+      // Mock login for assignment testing
+      loginMockUser();
+      navigate('/dashboard');
+      return;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,

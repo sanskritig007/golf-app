@@ -1,20 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../utils/supabase';
 
 const Dashboard = () => {
   const { user } = useAuth();
   
-  // Mock data for the assignment scope
-  const [scores, setScores] = useState([
-    { id: 1, date: '2026-03-10', value: 36 },
-    { id: 2, date: '2026-03-12', value: 42 },
-    { id: 3, date: '2026-03-15', value: 31 },
-  ]);
+  const [scores, setScores] = useState([]);
   const [newScore, setNewScore] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddScore = (e) => {
+  useEffect(() => {
+    const fetchScores = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('scores')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error("Error fetching scores:", error);
+      } else {
+        setScores(data || []);
+      }
+      setIsLoading(false);
+    };
+
+    fetchScores();
+  }, [user]);
+
+  const handleAddScore = async (e) => {
     e.preventDefault();
+    if (!user?.id) {
+      alert("You must be logged in with a valid account to submit a score.");
+      return;
+    }
+
     const scoreVal = parseInt(newScore);
     
     // Validation: 1-45 Stableford
@@ -23,19 +51,33 @@ const Dashboard = () => {
       return;
     }
 
-    const newScoreEntry = {
-      id: Date.now(),
-      date: newDate,
-      value: scoreVal
-    };
+    setIsSubmitting(true);
 
+    const { data, error } = await supabase
+      .from('scores')
+      .insert([
+        { user_id: user.id, date: newDate, value: scoreVal }
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error inserting score:", error);
+      alert("Failed to submit score: " + error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Success
+    const insertedScore = data[0];
+    
     // Rolling logic: Keep latest 5, reverse chronological
-    const updatedScores = [newScoreEntry, ...scores]
+    const updatedScores = [insertedScore, ...scores]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
       
     setScores(updatedScores);
     setNewScore('');
+    setIsSubmitting(false);
   };
 
   return (
@@ -89,7 +131,9 @@ const Dashboard = () => {
                   placeholder="e.g. 36"
                 />
               </div>
-              <button type="submit" className="btn-primary w-full sm:w-auto h-[50px]">Submit</button>
+              <button type="submit" disabled={isSubmitting} className="btn-primary w-full sm:w-auto h-[50px]">
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </button>
             </form>
           </div>
 
@@ -99,7 +143,11 @@ const Dashboard = () => {
               <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">LAST 5 ROUNDS</span>
             </div>
             
-            {scores.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8 text-text-muted italic bg-black/20 rounded-xl border border-white/5 animate-pulse">
+                Loading your rounds...
+              </div>
+            ) : scores.length === 0 ? (
               <div className="text-center py-8 text-text-muted italic bg-black/20 rounded-xl border border-white/5">
                 No scores submitted yet. Play a round to enter the next draw!
               </div>
@@ -147,6 +195,27 @@ const Dashboard = () => {
                 <span className="text-white font-bold">April 1st</span>
               </li>
             </ul>
+          </div>
+
+          {/* Winnings & Proof Upload */}
+          <div className="glass-card border-primary/30">
+            <h3 className="mb-2 flex items-center gap-2">
+              Claim Winnings
+              <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+            </h3>
+            <p className="text-xs text-text-muted mb-4">You have an outstanding prize. Verify your latest round to claim.</p>
+            
+            <div className="bg-black/40 rounded-xl p-4 mb-4 border border-white/5">
+              <div className="text-sm text-text-muted mb-1">Pending Amount</div>
+              <div className="text-2xl font-bold text-primary">£50.00</div>
+            </div>
+
+            <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={() => alert("File upload dialog would open here. Proof of scorecard is sent to admins for manual review before Stripe payout.")}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              Upload Scorecard Proof
+            </button>
           </div>
         </div>
         

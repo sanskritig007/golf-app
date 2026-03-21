@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -8,11 +9,19 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { loginMockUser } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const { isSupabaseConfigured } = await import('../utils/supabase');
+    if (!isSupabaseConfigured) {
+      loginMockUser();
+      navigate('/dashboard');
+      return;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
