@@ -20,35 +20,81 @@ const Dashboard = () => {
   const { user } = useAuth();
   
   const [scores, setScores] = useState([]);
+  const [charities, setCharities] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isEditingCharity, setIsEditingCharity] = useState(false);
+  const [isSavingCharity, setIsSavingCharity] = useState(false);
+  
   const [newScore, setNewScore] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchScores = async () => {
+    const fetchData = async () => {
       if (!user?.id) {
         setIsLoading(false);
         return;
       }
       setIsLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch Charities list
+      const { data: charitiesData } = await supabase
+        .from('charities')
+        .select('*')
+        .order('name');
+      if (charitiesData) setCharities(charitiesData);
+
+      // Fetch Profile (User's linked charity)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*, charities(*)')
+        .eq('id', user.id)
+        .single();
+      if (profileData) setUserProfile(profileData);
+
+      // Fetch Scores
+      const { data: scoresData, error: scoresError } = await supabase
         .from('scores')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(5);
 
-      if (error) {
-        console.error("Error fetching scores:", error);
+      if (scoresError) {
+        console.error("Error fetching scores:", scoresError);
       } else {
-        setScores(data || []);
+        setScores(scoresData || []);
       }
+      
       setIsLoading(false);
     };
 
-    fetchScores();
+    fetchData();
   }, [user]);
+
+  const handleCharityChange = async (e) => {
+    const newCharityId = e.target.value;
+    setIsSavingCharity(true);
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert({ 
+        id: user.id, 
+        selected_charity_id: newCharityId 
+      })
+      .select('*, charities(*)')
+      .single();
+
+    if (error) {
+      console.error("Error updating charity:", error);
+      alert("Failed to update charity. Check your internet connection.");
+    } else {
+      setUserProfile(data);
+      setIsEditingCharity(false);
+    }
+    setIsSavingCharity(false);
+  };
 
   const handleAddScore = async (e) => {
     e.preventDefault();
@@ -210,11 +256,44 @@ const Dashboard = () => {
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
               className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 shadow-glow"
             >
-              <span className="text-2xl">🌱</span>
+              <span className="text-2xl">{userProfile?.charities ? '🌱' : '❓'}</span>
             </motion.div>
             <h3 className="mb-2">Your Impact</h3>
-            <p className="text-sm mb-4">You are directing <strong className="text-white">10%</strong> of your subscription to the <strong>Global Health Foundation</strong>.</p>
-            <button className="text-primary text-sm font-semibold hover:underline">Change Charity</button>
+            
+            {isEditingCharity ? (
+              <div className="w-full mb-4 animate-fade-in">
+                <select 
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-primary mb-2"
+                  value={userProfile?.selected_charity_id || ''}
+                  onChange={handleCharityChange}
+                  disabled={isSavingCharity}
+                >
+                  <option value="" disabled>Select a charity...</option>
+                  {charities.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2 justify-center">
+                  <button onClick={() => setIsEditingCharity(false)} className="text-xs text-text-muted hover:text-white transition-colors">
+                    {isSavingCharity ? 'Saving...' : 'Cancel'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm mb-4 min-h-[40px]">
+                  {userProfile?.charities 
+                    ? <>You are directing <strong className="text-white">10%</strong> of your subscription to the <strong className="text-primary">{userProfile.charities.name}</strong>.</>
+                    : <>You haven't selected a charity yet. Choose one to start making an impact!</>}
+                </p>
+                <button 
+                  onClick={() => setIsEditingCharity(true)} 
+                  className="text-primary text-sm font-semibold hover:underline"
+                >
+                  {userProfile?.charities ? 'Change Charity' : 'Select Charity'}
+                </button>
+              </>
+            )}
           </motion.div>
 
           <motion.div variants={itemVariants} className="glass-card hover:shadow-glow transition-all duration-500">
