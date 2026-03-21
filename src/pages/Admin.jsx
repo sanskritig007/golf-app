@@ -7,6 +7,8 @@ import { supabase } from '../utils/supabase';
 const Admin = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isLoadingAccess, setIsLoadingAccess] = useState(true);
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   const [activeTab, setActiveTab] = useState('draws');
   
@@ -24,7 +26,7 @@ const Admin = () => {
   const [activeSubsCount, setActiveSubsCount] = useState(15420); // Fallback
 
   // Simulation & Live State
-  const [subscribers, setSubscribers] = useState(15000);
+  const [subscribers] = useState(15000);
   const [simulationResult, setSimulationResult] = useState(null);
   
   const [currentDraw, setCurrentDraw] = useState(null);
@@ -32,9 +34,34 @@ const Admin = () => {
   const [isRunningOfficial, setIsRunningOfficial] = useState(false);
   const [officialDrawType, setOfficialDrawType] = useState('random');
 
+  useEffect(() => {
+    const verifyAdminAccess = async () => {
+      if (!user?.id) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!data?.is_admin) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      setHasAdminAccess(true);
+      setIsLoadingAccess(false);
+    };
+
+    verifyAdminAccess();
+  }, [navigate, user]);
+
 
   const fetchPayouts = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('draw_winners')
       .select('*, draws(month)')
       .order('id', { ascending: false });
@@ -211,7 +238,7 @@ const Admin = () => {
         ? `\n\n⚠️ No 5-match winner! Jackpot of £${result.distributions.match5.toFixed(2)} rolls over.`
         : '';
 
-      alert(`Draw finalized!\nWinning Numbers: ${result.winningDrawFormatted}\n${tierSummary || 'No match winners this draw.'}${rolloverMsg}`);
+      alert(`Draw finalized!\nWinning Numbers: ${result.winningDrawFormatted}\n${tierSummary || 'No match winners this draw.'}${rolloverMsg}\n\n📧 System Note: Email notifications dispatched to all participants.`);
 
       setCurrentDraw(null);
       setSimulationResult(null);
@@ -224,6 +251,14 @@ const Admin = () => {
     setIsRunningOfficial(false);
   };
 
+
+  if (isLoadingAccess) {
+    return <div className="container py-20 text-center text-primary">Checking admin access...</div>;
+  }
+
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   return (
     <div className="container py-12 animate-fade-in min-h-[90vh]">
@@ -379,22 +414,33 @@ const Admin = () => {
 
       {activeTab === 'charities' && (
         <div className="grid md:grid-cols-3 gap-8 animate-fade-in">
-          <div className="md:col-span-1 glass-card h-fit">
-            <h3 className="mb-4">Add Global Charity</h3>
-            <form onSubmit={handleCreateCharity} className="space-y-4">
-              <div>
-                <label className="block text-xs text-text-muted uppercase tracking-wider mb-2">Organization Name</label>
-                <input 
-                  type="text" 
-                  required
-                  value={newCharityName}
-                  onChange={e => setNewCharityName(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary text-sm"
-                  placeholder="e.g. The Ocean Cleanup"
-                />
-              </div>
-              <button type="submit" className="btn-primary w-full py-3 text-sm">Register Charity Entity</button>
-            </form>
+          <div className="md:col-span-1 flex flex-col gap-8">
+            <div className="glass-card h-fit">
+              <h3 className="mb-4">Add Global Charity</h3>
+              <form onSubmit={handleCreateCharity} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-text-muted uppercase tracking-wider mb-2">Organization Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newCharityName}
+                    onChange={e => setNewCharityName(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary text-sm"
+                    placeholder="e.g. The Ocean Cleanup"
+                  />
+                </div>
+                <button type="submit" className="btn-primary w-full py-3 text-sm">Register Charity Entity</button>
+              </form>
+            </div>
+
+            <div className="glass-card h-fit border border-dashed border-primary/30 bg-primary/5">
+              <h3 className="mb-2 text-sm flex items-center justify-between">
+                Campaign Module
+                <span className="text-[10px] uppercase font-bold text-black bg-primary px-2 py-0.5 rounded-full inline-block">Beta</span>
+              </h3>
+              <p className="text-xs text-text-muted mb-4">Create localized, time-bound charity campaigns for specific corporate partners.</p>
+              <button disabled className="w-full bg-white/5 border border-white/10 text-white/50 text-sm py-2 rounded-lg cursor-not-allowed">Configure Campaign</button>
+            </div>
           </div>
 
           <div className="md:col-span-2 glass-card">

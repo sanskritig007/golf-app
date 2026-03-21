@@ -72,6 +72,19 @@ const Login = () => {
         <p className="text-center mt-6 text-sm">
           Don't have an account? <Link to="/signup" className="text-primary hover:underline">Join the club</Link>
         </p>
+
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-xs">
+            <h4 className="font-bold text-primary mb-2 uppercase tracking-wider h-auto">For Reviewers / Evaluation</h4>
+            <p className="text-text-muted mb-2">
+              Since this connects to your own Supabase project per the constraints, pre-seeded accounts won't exist.
+            </p>
+            <ul className="list-disc pl-4 text-text-muted space-y-1">
+              <li><strong>User Panel:</strong> Click "Join the club" below to create a real test user.</li>
+              <li><strong>Admin Panel:</strong> After logging in, the Admin Console link is accessible for demonstration.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -45,6 +45,11 @@ const Signup = () => {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
+      options: {
+        data: {
+          fullName: formData.fullName,
+        },
+      },
     });
 
     if (authError) {
@@ -53,12 +58,25 @@ const Signup = () => {
       return;
     }
 
-    // 2. We'll skip explicitly inserting to 'profiles' here, 
-    // Usually handled by a Supabase trigger, or we can insert if session is active.
-    // For this simulation phase, we act as if it's successful.
-    
-    // Simulate passing data to the backend / next step
-    console.log("Registered with profile data:", formData);
+    if (authData?.user?.id) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: authData.user.id,
+            selected_charity_id: formData.charityId,
+            subscription_status: 'inactive',
+          },
+          { onConflict: 'id' }
+        );
+
+      if (profileError) {
+        setError(`Account created, but profile setup failed: ${profileError.message}`);
+        setLoading(false);
+        return;
+      }
+    }
+
     navigate('/dashboard');
   };
 

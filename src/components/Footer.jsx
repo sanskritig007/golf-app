@@ -24,14 +24,26 @@ const Footer = () => {
             </ul>
           </div>
           
-          <div>
-            <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Legal</h4>
-            <ul className="space-y-3 text-sm text-text-muted">
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Charity Transparency</a></li>
-            </ul>
-          </div>
+            <div>
+              <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Legal</h4>
+              <ul className="space-y-3 text-sm text-text-muted">
+                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Charity Transparency</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Availability</h4>
+              <ul className="space-y-3 text-sm text-text-muted">
+                <li className="flex items-center gap-2 opacity-80">
+                  <span>🌍</span> Region: <strong>UK (Global Q4)</strong>
+                </li>
+                <li className="flex items-center gap-2 opacity-80">
+                  <span>📱</span> Mobile App: <strong className="text-primary">Coming Soon</strong>
+                </li>
+              </ul>
+            </div>
         </div>
         
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-text-muted">

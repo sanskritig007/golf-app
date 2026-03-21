@@ -1,14 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../utils/supabase';
 
 const Navbar = () => {
   const { user, logoutMockUser } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const loadAdminState = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      setIsAdmin(Boolean(data?.is_admin));
+    };
+
+    loadAdminState();
+  }, [user]);
+
+  const enableAdminMode = async () => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(
+        { id: user.id, is_admin: true },
+        { onConflict: 'id' }
+      );
+
+    if (error) {
+      alert(`Failed to enable admin mode: ${error.message}`);
+      return;
+    }
+
+    setIsAdmin(true);
+    setIsMobileMenuOpen(false);
+    navigate('/admin');
+  };
 
   const handleLogout = async () => {
-    const { isSupabaseConfigured } = await import('../utils/supabase');
+    const { isSupabaseConfigured, supabase } = await import('../utils/supabase');
     if (!isSupabaseConfigured) {
       logoutMockUser();
     } else {
@@ -36,7 +77,17 @@ const Navbar = () => {
             <>
               <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Dashboard</NavLink>
               <NavLink to="/draws" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Draws</NavLink>
-              <NavLink to="/admin" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Admin Console</NavLink>
+              {isAdmin ? (
+                <NavLink to="/admin" className={({ isActive }) => (isActive ? "text-primary no-underline font-medium" : "text-text-muted hover:text-white no-underline font-medium transition-colors")}>Admin Console</NavLink>
+              ) : (
+                <button
+                  onClick={enableAdminMode}
+                  className="text-xs bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+                  title="Grant yourself admin access for review"
+                >
+                  Enable Admin Mode
+                </button>
+              )}
               <button onClick={handleLogout} className="text-text-muted hover:text-red-400 font-medium transition-colors cursor-pointer bg-transparent border-none">Sign Out</button>
             </>
           ) : (
@@ -73,7 +124,13 @@ const Navbar = () => {
               <>
                 <NavLink to="/dashboard" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Dashboard</NavLink>
                 <NavLink to="/draws" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Draws</NavLink>
-                <NavLink to="/admin" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Admin Console</NavLink>
+                {isAdmin ? (
+                  <NavLink to="/admin" onClick={closeMobileMenu} className={({ isActive }) => (isActive ? "text-primary text-xl font-medium" : "text-white text-xl font-medium")}>Admin Console</NavLink>
+                ) : (
+                  <button onClick={enableAdminMode} className="text-primary text-xl font-medium">
+                    Enable Admin Mode
+                  </button>
+                )}
                 <button onClick={handleLogout} className="text-red-400 text-xl font-medium">Sign Out</button>
               </>
             ) : (

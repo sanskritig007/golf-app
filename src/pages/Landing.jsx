@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Footer from '../components/Footer';
 import { supabase } from '../utils/supabase';
@@ -78,9 +79,9 @@ const Landing = () => {
               <h2 className="text-4xl md:text-5xl font-black mb-4">Our Charity Roster</h2>
               <p className="text-lg text-text-muted leading-relaxed">We have partnered with world-class, registered organizations making a measurable impact on the ground. Powering them with your subscription.</p>
             </div>
-            <button className="btn-ghost px-8 py-3 rounded-full hover:bg-white/5 border border-white/10 font-bold transition-all hover:border-primary/50">
-              Explore All Charities
-            </button>
+            <Link to="/subscribe" className="btn-ghost px-8 py-3 rounded-full hover:bg-white/5 border border-white/10 font-bold transition-all hover:border-primary/50 text-center flex items-center justify-center">
+              Support a Charity Today
+            </Link>
           </div>
           
           {loading ? (
